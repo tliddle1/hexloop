@@ -12,6 +12,10 @@ const (
 type Connection [2]int
 type Coordinate [2]float64
 
+// TODO Make connections a different color
+// maybe black if it hits a wall?
+// maybe you hover the connection to make it glow?
+
 // Hex represents a hexagonal tile
 type Hex struct {
 	col, row    int        // Column and Row

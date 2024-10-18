@@ -13,7 +13,7 @@ const (
 	connectionStrokeWidth = 3
 )
 
-func drawHexagon(screen *ebiten.Image, hex *Hex) {
+func drawHexagon(screen *ebiten.Image, hex *Hex, theme *Theme) {
 	vertices := hex.vertexCoordinates()
 	vertices = append(vertices, vertices[0])
 	for i := 0; i < numHexagonSides; i++ {
@@ -23,26 +23,26 @@ func drawHexagon(screen *ebiten.Image, hex *Hex) {
 			float32(vertices[i+1][0]),
 			float32(vertices[i+1][1]),
 			hexagonStrokeWidth,
-			hexBorderColor,
+			theme.HexBorderColor,
 			false)
 	}
 }
 
-func drawHexagonConnections(screen *ebiten.Image, hex Hex) {
+func drawHexagonConnections(screen *ebiten.Image, hex Hex, theme *Theme) {
 	if len(hex.connections) == 0 {
 		return
 	}
 	for _, connection := range hex.connections {
-		drawHexagonConnection(screen, hex, connection, connectionColor)
+		drawHexagonConnection(screen, hex, connection, theme.ConnectionColor)
 	}
 }
 
-func drawPendingHexagonConnection(screen *ebiten.Image, hex Hex, nextConnections []Connection) {
+func drawPendingHexagonConnection(screen *ebiten.Image, hex Hex, nextConnections []Connection, theme *Theme) {
 	if len(hex.connections) != 0 {
 		return
 	}
 	for _, connection := range nextConnections {
-		drawHexagonConnection(screen, hex, connection, pendingConnectionColor)
+		drawHexagonConnection(screen, hex, connection, theme.PendingConnectionColor)
 	}
 }
 

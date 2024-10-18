@@ -34,6 +34,7 @@ var connectionPermutations = [][]Connection{
 type Game struct {
 	hexes                     []*Hex // List of hexagons
 	possibleConnections       [][]Connection
+	theme                     *Theme
 	nextConnectionsIndex      int
 	screenWidth, screenHeight int
 }
@@ -47,6 +48,7 @@ func NewGame() *Game {
 	return &Game{
 		hexes:                newHexes(),
 		possibleConnections:  connectionPermutations,
+		theme:                NewDefaultTheme(),
 		nextConnectionsIndex: rand.Intn(len(connectionPermutations)),
 		screenWidth:          int(screenWidth),
 		screenHeight:         int(screenHeight),
@@ -72,15 +74,15 @@ func newHexes() (hexes []*Hex) {
 
 // Draw renders the game state
 func (this *Game) Draw(screen *ebiten.Image) {
-	screen.Fill(backgroundColor)
+	screen.Fill(this.theme.BackgroundColor)
 	// Draw all hexagons
 	for _, hex := range this.hexes {
-		drawHexagon(screen, hex)
+		drawHexagon(screen, hex, this.theme)
 	}
 	for _, hex := range this.hexes {
-		drawHexagonConnections(screen, *hex)
+		drawHexagonConnections(screen, *hex, this.theme)
 		if hex.hovered {
-			drawPendingHexagonConnection(screen, *hex, this.nextConnections())
+			drawPendingHexagonConnection(screen, *hex, this.nextConnections(), this.theme)
 		}
 	}
 }
