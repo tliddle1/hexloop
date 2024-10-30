@@ -5,6 +5,7 @@ import (
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	color2 "github.com/tliddle1/game/color"
 	"github.com/tliddle1/game/vector"
 )
 
@@ -29,12 +30,12 @@ func drawHexagon(screen *ebiten.Image, hex *Hex, color colors.RGBA) {
 	}
 }
 
-func drawHexagonConnections(screen *ebiten.Image, hex Hex, theme *Theme) {
+func drawHexagonConnections(screen *ebiten.Image, hex Hex, theme *color2.Theme) {
 	if len(hex.connections) == 0 {
 		return
 	}
 	for _, connection := range hex.connections {
-		drawHexagonConnection(screen, hex, connection, theme.ConnectionColor)
+		drawHexagonConnection(screen, hex, connection, theme.ConnectionColor, theme.BackgroundColor)
 	}
 }
 
@@ -47,13 +48,13 @@ func drawHexagonConnections(screen *ebiten.Image, hex Hex, theme *Theme) {
 //	}
 //}
 
-func drawHexagonConnection(screen *ebiten.Image, hex Hex, connection Connection, color colors.RGBA) {
+func drawHexagonConnection(screen *ebiten.Image, hex Hex, connection Connection, color, backgroundColor colors.RGBA) {
 	sideA := connection[0]
 	sideB := connection[1]
 	diff := math.Abs(float64(sideA - sideB))
 	// Straight Across
 	if diff == 3 {
-		drawLineConnection(screen, hex, connection, connectionStrokeWidth+pathBuffer, colors.RGBA{R: 251, G: 217, B: 100, A: 255})
+		drawLineConnection(screen, hex, connection, connectionStrokeWidth+pathBuffer, backgroundColor)
 		drawLineConnection(screen, hex, connection, connectionStrokeWidth, color)
 		return
 	}
@@ -61,25 +62,25 @@ func drawHexagonConnection(screen *ebiten.Image, hex Hex, connection Connection,
 	if diff == 2 {
 		centerSide := (sideA + sideB) / 2
 		angleToSide := math.Pi*2/3 + math.Pi*1/3*float64(centerSide)
-		drawLargeCurveConnection(screen, hex, angleToSide, connectionStrokeWidth+pathBuffer, colors.RGBA{R: 251, G: 217, B: 100, A: 255})
+		drawLargeCurveConnection(screen, hex, angleToSide, connectionStrokeWidth+pathBuffer, backgroundColor)
 		drawLargeCurveConnection(screen, hex, angleToSide, connectionStrokeWidth, color)
 		return
 	}
 	if diff == 4 {
 		oppositeCenterSide := (sideA + sideB) / 2
 		angleToSide := -math.Pi*1/3 + math.Pi*1/3*float64(oppositeCenterSide)
-		drawLargeCurveConnection(screen, hex, angleToSide, connectionStrokeWidth+pathBuffer, colors.RGBA{R: 251, G: 217, B: 100, A: 255})
+		drawLargeCurveConnection(screen, hex, angleToSide, connectionStrokeWidth+pathBuffer, backgroundColor)
 		drawLargeCurveConnection(screen, hex, angleToSide, connectionStrokeWidth, color)
 		return
 	}
 	// Small Curve
 	if diff == 1 {
-		drawSmallCurveConnection(screen, hex.vertexCoordinates(), min(sideA, sideB), connectionStrokeWidth+pathBuffer, colors.RGBA{R: 251, G: 217, B: 100, A: 255})
+		drawSmallCurveConnection(screen, hex.vertexCoordinates(), min(sideA, sideB), connectionStrokeWidth+pathBuffer, backgroundColor)
 		drawSmallCurveConnection(screen, hex.vertexCoordinates(), min(sideA, sideB), connectionStrokeWidth, color)
 		return
 	}
 	if diff == 5 {
-		drawSmallCurveConnection(screen, hex.vertexCoordinates(), 5, connectionStrokeWidth+pathBuffer, colors.RGBA{R: 251, G: 217, B: 100, A: 255})
+		drawSmallCurveConnection(screen, hex.vertexCoordinates(), 5, connectionStrokeWidth+pathBuffer, backgroundColor)
 		drawSmallCurveConnection(screen, hex.vertexCoordinates(), 5, connectionStrokeWidth, color)
 		return
 	}

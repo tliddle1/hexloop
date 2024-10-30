@@ -5,10 +5,11 @@ import (
 	"math/rand"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	color2 "github.com/tliddle1/game/color"
 )
 
 const (
-	rows       = 9          // Number of hexagon rows
+	rows       = 5          // Number of hexagon rows
 	cols       = rows*4 - 2 //24 // Number of hexagon columns
 	marginSize = 30
 )
@@ -34,18 +35,13 @@ var (
 		{{0, 5}, {1, 3}, {2, 4}},
 		{{0, 5}, {1, 4}, {2, 3}},
 	}
-	pendingColors = []color.RGBA{
-		{R: 0, G: 255, B: 0, A: 255},   // Green
-		{R: 0, G: 0, B: 255, A: 255},   // Blue
-		{R: 255, G: 0, B: 255, A: 255}, // Magenta
-	}
 )
 
 // Game represents the game state
 type Game struct {
 	hexes                     []*Hex // List of hexagons
 	possibleConnections       [][]Connection
-	theme                     *Theme
+	theme                     *color2.Theme
 	nextConnectionsIndex      int
 	screenWidth, screenHeight int
 	squareMode                bool
@@ -65,7 +61,7 @@ func NewGame(squareMode bool) *Game {
 	return &Game{
 		hexes:                newHexes(squareMode),
 		possibleConnections:  connectionPermutations,
-		theme:                NewDefaultTheme(),
+		theme:                color2.NewDefaultTheme(),
 		nextConnectionsIndex: rand.Intn(len(connectionPermutations)),
 		screenWidth:          int(screenWidth),
 		screenHeight:         int(screenHeight),
@@ -111,7 +107,7 @@ func (this *Game) Draw(screen *ebiten.Image) {
 			//drawPendingHexagonConnection(screen, *hex, this.nextConnections(), this.theme)
 			if len(hex.connections) == 0 {
 				hoveredHex = hex
-				drawHexagon(screen, hoveredHex, this.theme.PendingConnectionColor)
+				drawHexagon(screen, hoveredHex, this.theme.PendingHexBorderColor)
 			}
 		}
 	}
@@ -123,12 +119,12 @@ func (this *Game) Draw(screen *ebiten.Image) {
 			for j := range nextConns[i] {
 				side := nextConns[i][j]
 				nextHex := hoveredHex
-				drawHexagonConnection(screen, *nextHex, nextConns[i], pendingColors[i%3])
+				drawHexagonConnection(screen, *nextHex, nextConns[i], this.theme.PendingConnectionColors[i%3], this.theme.BackgroundColor)
 				nextSide := side
 				drawn := true
 				k := 0
 				for {
-					nextHex, nextSide, drawn = this.drawPendingLoops(screen, nextHex, nextSide, hoveredHex, pendingColors[i%3])
+					nextHex, nextSide, drawn = this.drawPendingLoops(screen, nextHex, nextSide, hoveredHex, this.theme.PendingConnectionColors[i%3])
 					if !drawn || nextHex == nil || k > rows*cols*5 {
 						break
 					}
@@ -299,7 +295,7 @@ func (this *Game) findLoop(previousConnectedSide int, curHex *Hex, startHexConne
 func (this *Game) drawLoops(screen *ebiten.Image) {
 	for _, loop := range this.loops {
 		for _, hexConnection := range loop {
-			drawHexagonConnection(screen, *hexConnection.hex, hexConnection.connection, color.RGBA{R: 255, G: 0, B: 0, A: 255})
+			drawHexagonConnection(screen, *hexConnection.hex, hexConnection.connection, color.RGBA{R: 255, G: 0, B: 0, A: 255}, this.theme.BackgroundColor)
 		}
 	}
 }
@@ -308,7 +304,7 @@ func (this *Game) drawLoops(screen *ebiten.Image) {
 func (this *Game) drawPendingLoops(screen *ebiten.Image, hex *Hex, side int, hoveredHex *Hex, color color.RGBA) (nextHex *Hex, nextSide int, drawn bool) {
 	nextHexConnection := this.getNextHexConnection(hex, side, hoveredHex)
 	if nextHexConnection.hex != nil {
-		drawHexagonConnection(screen, *nextHexConnection.hex, nextHexConnection.connection, color)
+		drawHexagonConnection(screen, *nextHexConnection.hex, nextHexConnection.connection, color, this.theme.BackgroundColor)
 		return nextHexConnection.hex, nextHexConnection.connection[1], true
 	}
 	return nil, -1, false
