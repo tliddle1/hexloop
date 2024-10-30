@@ -7,7 +7,8 @@ import (
 )
 
 func main() {
-	game := NewGame()
+	squareMode := false
+	game := NewGame(squareMode)
 	ebiten.SetWindowSize(game.screenWidth, game.screenHeight)
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
