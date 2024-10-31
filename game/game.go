@@ -1,4 +1,4 @@
-package main
+package game
 
 import (
 	"image/color"
@@ -45,7 +45,7 @@ type Game struct {
 	possibleConnections       [][]hexagon.Connection
 	theme                     *color2.Theme
 	nextConnectionsIndex      int
-	screenWidth, screenHeight int
+	ScreenWidth, ScreenHeight int
 	disabledTicksLeft         int
 	loops                     [][]hexagon.HexConnection
 }
@@ -61,8 +61,8 @@ func NewGame() *Game {
 		possibleConnections:  connectionPermutations,
 		theme:                color2.NewDefaultTheme(),
 		nextConnectionsIndex: rand.Intn(len(connectionPermutations)),
-		screenWidth:          int(screenWidth),
-		screenHeight:         int(screenHeight),
+		ScreenWidth:          int(screenWidth),
+		ScreenHeight:         int(screenHeight),
 	}
 }
 
