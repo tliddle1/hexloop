@@ -6,6 +6,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	color2 "github.com/tliddle1/game/color"
+	"github.com/tliddle1/game/hexagon"
 )
 
 const (
@@ -17,8 +18,8 @@ const (
 // TODO add points (exponentially more for more hexes, double for multiple loops at once, bonus for clearing board)
 
 var (
-	threeLinesConnections  = []Connection{{0, 3}, {1, 4}, {2, 5}}
-	connectionPermutations = [][]Connection{
+	threeLinesConnections  = []hexagon.Connection{{0, 3}, {1, 4}, {2, 5}}
+	connectionPermutations = [][]hexagon.Connection{
 		{{0, 1}, {2, 3}, {4, 5}},
 		{{0, 1}, {2, 4}, {3, 5}},
 		{{0, 1}, {2, 5}, {3, 4}},
@@ -39,8 +40,8 @@ var (
 
 // Game represents the game state
 type Game struct {
-	hexes                     []*Hex // List of hexagons
-	possibleConnections       [][]Connection
+	hexes                     []*hexagon.Hex // List of hexagons
+	possibleConnections       [][]hexagon.Connection
 	theme                     *color2.Theme
 	nextConnectionsIndex      int
 	screenWidth, screenHeight int
@@ -51,10 +52,10 @@ type Game struct {
 
 // NewGame initializes the game state
 func NewGame(squareMode bool) *Game {
-	hexGridWidth := hexSideRadius * (cols + 1)
-	hexGridHeight := hexVertexRadius * (rows*3 + 0.5)
+	hexGridWidth := hexagon.HexSideRadius * (cols + 1)
+	hexGridHeight := hexagon.HexVertexRadius * (rows*3 + 0.5)
 	if squareMode {
-		hexGridHeight -= hexVertexRadius * 1.5
+		hexGridHeight -= hexagon.HexVertexRadius * 1.5
 	}
 	screenWidth := hexGridWidth + marginSize*2
 	screenHeight := hexGridHeight + marginSize*2
@@ -69,23 +70,23 @@ func NewGame(squareMode bool) *Game {
 	}
 }
 
-func newHexes(squareMode bool) (hexes []*Hex) {
-	xBuffer := marginSize + hexSideRadius
-	yBuffer := float64(marginSize + hexVertexRadius)
+func newHexes(squareMode bool) (hexes []*hexagon.Hex) {
+	xBuffer := marginSize + hexagon.HexSideRadius
+	yBuffer := float64(marginSize + hexagon.HexVertexRadius)
 	for rowNum := 0; rowNum < rows; rowNum++ {
 		for colNum := 0; colNum < cols; colNum++ {
 			if squareMode && rowNum == rows-1 && isOdd(colNum) {
 				continue
 			}
-			x := float64(colNum) * hexSideRadius
-			y := float64(rowNum) * hexVertexRadius * 3
+			x := float64(colNum) * hexagon.HexSideRadius
+			y := float64(rowNum) * hexagon.HexVertexRadius * 3
 			// Offset odd rows to create staggered effect
 			if colNum%2 != 0 {
-				y += hexVertexRadius * 1.5
+				y += hexagon.HexVertexRadius * 1.5
 			}
-			newHex := Hex{col: colNum, row: rowNum, center: Coordinate{x + xBuffer, y + yBuffer}}
+			newHex := hexagon.Hex{Col: colNum, Row: rowNum, Center: hexagon.Coordinate{x + xBuffer, y + yBuffer}}
 			if squareMode && rowNum == (rows-1)/2 && colNum == (cols-1)/2 {
-				newHex.connections = threeLinesConnections
+				newHex.Connections = threeLinesConnections
 			}
 			hexes = append(hexes, &newHex)
 		}
@@ -95,7 +96,7 @@ func newHexes(squareMode bool) (hexes []*Hex) {
 
 // Draw renders the game state
 func (this *Game) Draw(screen *ebiten.Image) {
-	var hoveredHex *Hex = nil
+	var hoveredHex *hexagon.Hex = nil
 	screen.Fill(this.theme.BackgroundColor)
 	// Draw all hexagons
 	for _, hex := range this.hexes {
@@ -103,9 +104,9 @@ func (this *Game) Draw(screen *ebiten.Image) {
 	}
 	for _, hex := range this.hexes {
 		drawHexagonConnections(screen, *hex, this.theme)
-		if hex.hovered && this.disabledTicksLeft == 0 {
+		if hex.Hovered && this.disabledTicksLeft == 0 {
 			//drawPendingHexagonConnection(screen, *hex, this.nextConnections(), this.theme)
-			if len(hex.connections) == 0 {
+			if len(hex.Connections) == 0 {
 				hoveredHex = hex
 				drawHexagon(screen, hoveredHex, this.theme.PendingHexBorderColor)
 			}
@@ -148,7 +149,7 @@ func (this *Game) Update() error {
 		if this.disabledTicksLeft == 1 {
 			for _, loop := range this.loops {
 				for _, hexConnection := range loop {
-					hexConnection.hex.connections = nil
+					hexConnection.hex.Connections = nil
 				}
 			}
 			this.loops = nil
@@ -168,8 +169,8 @@ func (this *Game) Update() error {
 
 func (this *Game) updateClickedHex(mouseX, mouseY int) {
 	for _, hex := range this.hexes {
-		if hex.pointInHexagon(float64(mouseX), float64(mouseY), hexVertexRadius) && hex.empty() {
-			hex.connections = this.nextConnections()
+		if hex.PointInHexagon(float64(mouseX), float64(mouseY), hexagon.HexVertexRadius) && hex.Empty() {
+			hex.Connections = this.nextConnections()
 			this.updateNextConnections()
 			this.loops = this.checkForCompleteLoops(hex)
 		}
@@ -178,12 +179,12 @@ func (this *Game) updateClickedHex(mouseX, mouseY int) {
 
 func (this *Game) updateHoveredHex(mouseX, mouseY int) {
 	for _, hex := range this.hexes {
-		if hex.pointInHexagon(float64(mouseX), float64(mouseY), hexVertexRadius) {
-			if hex.empty() {
-				hex.hovered = true
+		if hex.PointInHexagon(float64(mouseX), float64(mouseY), hexagon.HexVertexRadius) {
+			if hex.Empty() {
+				hex.Hovered = true
 			}
 		} else {
-			hex.hovered = false
+			hex.Hovered = false
 		}
 	}
 }
@@ -192,11 +193,11 @@ func (this *Game) updateNextConnections() {
 	this.nextConnectionsIndex = rand.Intn(len(this.possibleConnections))
 }
 
-func (this *Game) nextConnections() []Connection {
+func (this *Game) nextConnections() []hexagon.Connection {
 	return this.possibleConnections[this.nextConnectionsIndex]
 }
 
-func (this *Game) getBorderHex(row, col, side int) *Hex {
+func (this *Game) getBorderHex(row, col, side int) *hexagon.Hex {
 	r, c := getBorderHexGridPosition(row, col, side)
 	return this.getHexFromGridPosition(r, c)
 }
@@ -237,19 +238,19 @@ func getBorderHexGridPosition(row, col, side int) (r, c int) {
 	}
 }
 
-func (this *Game) getHexFromGridPosition(row, col int) *Hex {
+func (this *Game) getHexFromGridPosition(row, col int) *hexagon.Hex {
 	for _, hex := range this.hexes {
-		if hex.row == row && hex.col == col {
+		if hex.Row == row && hex.Col == col {
 			return hex
 		}
 	}
 	return nil
 }
 
-func (this *Game) checkForCompleteLoops(hex *Hex) [][]HexConnection {
+func (this *Game) checkForCompleteLoops(hex *hexagon.Hex) [][]HexConnection {
 	var loops [][]HexConnection
-	if !hex.empty() {
-		for _, connection := range hex.connections {
+	if !hex.Empty() {
+		for _, connection := range hex.Connections {
 			side := connection[0]
 			loopFound, connectedHexes := this.findLoop(
 				side,
@@ -272,9 +273,9 @@ func (this *Game) checkForCompleteLoops(hex *Hex) [][]HexConnection {
 	return loops
 }
 
-func (this *Game) findLoop(previousConnectedSide int, curHex *Hex, startHexConnection HexConnection, connectedHexes []HexConnection) (bool, []HexConnection) {
-	nextHex := this.getBorderHex(curHex.row, curHex.col, previousConnectedSide)
-	if nextHex == nil || nextHex.empty() {
+func (this *Game) findLoop(previousConnectedSide int, curHex *hexagon.Hex, startHexConnection HexConnection, connectedHexes []HexConnection) (bool, []HexConnection) {
+	nextHex := this.getBorderHex(curHex.Row, curHex.Col, previousConnectedSide)
+	if nextHex == nil || nextHex.Empty() {
 		return false, nil
 	}
 	//connection with opposite side
@@ -282,13 +283,13 @@ func (this *Game) findLoop(previousConnectedSide int, curHex *Hex, startHexConne
 	if originSide < 0 {
 		originSide += 6
 	}
-	connectedSide := nextHex.connectedSide(originSide)
+	connectedSide := nextHex.ConnectedSide(originSide)
 	if nextHex.Equals(startHexConnection.hex) && (connectedSide == startHexConnection.connection[0] || connectedSide == startHexConnection.connection[1]) {
 		return true, connectedHexes
 	}
 	return this.findLoop(connectedSide, nextHex, startHexConnection, append(connectedHexes, HexConnection{
 		hex:        nextHex,
-		connection: Connection{originSide, connectedSide},
+		connection: hexagon.Connection{originSide, connectedSide},
 	}))
 }
 
@@ -301,7 +302,7 @@ func (this *Game) drawLoops(screen *ebiten.Image) {
 }
 
 // TODO make iterator
-func (this *Game) drawPendingLoops(screen *ebiten.Image, hex *Hex, side int, hoveredHex *Hex, color color.RGBA) (nextHex *Hex, nextSide int, drawn bool) {
+func (this *Game) drawPendingLoops(screen *ebiten.Image, hex *hexagon.Hex, side int, hoveredHex *hexagon.Hex, color color.RGBA) (nextHex *hexagon.Hex, nextSide int, drawn bool) {
 	nextHexConnection := this.getNextHexConnection(hex, side, hoveredHex)
 	if nextHexConnection.hex != nil {
 		drawHexagonConnection(screen, *nextHexConnection.hex, nextHexConnection.connection, color, this.theme.BackgroundColor)
@@ -310,8 +311,8 @@ func (this *Game) drawPendingLoops(screen *ebiten.Image, hex *Hex, side int, hov
 	return nil, -1, false
 }
 
-func (this *Game) getNextHexConnection(hex *Hex, connectedSide int, hoveredHex *Hex) HexConnection {
-	borderHex := this.getBorderHex(hex.row, hex.col, connectedSide)
+func (this *Game) getNextHexConnection(hex *hexagon.Hex, connectedSide int, hoveredHex *hexagon.Hex) HexConnection {
+	borderHex := this.getBorderHex(hex.Row, hex.Col, connectedSide)
 	if borderHex == hoveredHex {
 		originSide := connectedSide - 3
 		if originSide < 0 {
@@ -328,10 +329,10 @@ func (this *Game) getNextHexConnection(hex *Hex, connectedSide int, hoveredHex *
 		}
 		return HexConnection{
 			hex:        borderHex,
-			connection: Connection{originSide, nextConnectedSide},
+			connection: hexagon.Connection{originSide, nextConnectedSide},
 		}
 	}
-	if borderHex == nil || borderHex == hex || len(borderHex.connections) == 0 {
+	if borderHex == nil || borderHex == hex || len(borderHex.Connections) == 0 {
 		return HexConnection{
 			hex: nil,
 		}
@@ -340,14 +341,22 @@ func (this *Game) getNextHexConnection(hex *Hex, connectedSide int, hoveredHex *
 	if originSide < 0 {
 		originSide += 6
 	}
-	nextConnectedSide := borderHex.connectedSide(originSide)
+	nextConnectedSide := borderHex.ConnectedSide(originSide)
 	return HexConnection{
 		hex:        borderHex,
-		connection: Connection{originSide, nextConnectedSide},
+		connection: hexagon.Connection{originSide, nextConnectedSide},
 	}
 }
 
 type HexConnection struct {
-	hex        *Hex
-	connection Connection
+	hex        *hexagon.Hex
+	connection hexagon.Connection
+}
+
+func isEven(x int) bool {
+	return x%2 == 0
+}
+
+func isOdd(x int) bool {
+	return x%2 != 0
 }
