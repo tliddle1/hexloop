@@ -93,3 +93,8 @@ func getXCoordinateFromPolar(centerX, radius, angle float64) float64 {
 func getYCoordinateFromPolar(centerY, radius, angle float64) float64 {
 	return centerY + radius*math.Sin(angle)
 }
+
+type HexConnection struct {
+	Hex        *Hex
+	Connection Connection
+}

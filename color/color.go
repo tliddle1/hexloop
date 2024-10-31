@@ -40,7 +40,7 @@ func NewBlueTheme() *Theme {
 	}
 }
 func NewDefaultTheme() *Theme {
-	return NewBlueTheme()
+	return NewBeeTheme()
 }
 
 // HexToRGB converts a 6-digit hex color code to RGB values.
