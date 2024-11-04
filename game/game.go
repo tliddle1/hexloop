@@ -1,22 +1,31 @@
 package game
 
 import (
+	"bytes"
+	"fmt"
 	"image/color"
+	"log"
 	"math/rand"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/examples/resources/fonts"
+	"github.com/hajimehoshi/ebiten/v2/text/v2"
 	color2 "github.com/tliddle1/game/color"
 	"github.com/tliddle1/game/draw"
 	"github.com/tliddle1/game/hexagon"
 )
 
 const (
-	rows       = 5          // Number of hexagon rows
-	cols       = rows*4 - 2 //24 // Number of hexagon columns
-	marginSize = 30
+	// board
+	rows          = 5          // Number of hexagon rows
+	cols          = rows*4 - 2 // Number of hexagon columns
+	marginSize    = 30
+	scoreTextSize = 24
+	// points
+	clearBoardBonus  = 5_000
+	lowestPointValue = 1.0
+	increment        = 1.0
 )
-
-// TODO add points (exponentially more for more hexes, double for multiple loops at once, bonus for clearing board)
 
 var (
 	threeLinesConnections  = []hexagon.Connection{{0, 3}, {1, 4}, {2, 5}}
@@ -48,27 +57,28 @@ type Game struct {
 	ScreenWidth, ScreenHeight int
 	disabledTicksLeft         int
 	loops                     [][]hexagon.HexConnection
+	score                     int
 }
 
 // NewGame initializes the game state
 func NewGame() *Game {
 	hexGridWidth := hexagon.HexSideRadius * (cols + 1)
 	hexGridHeight := hexagon.HexVertexRadius * (rows*3 + 0.5)
-	screenWidth := hexGridWidth + marginSize*2
-	screenHeight := hexGridHeight + marginSize*2
+	screenWidth := int(hexGridWidth) + marginSize*2
+	screenHeight := int(hexGridHeight) + marginSize*2 + scoreTextSize
 	return &Game{
 		hexes:                newHexes(),
 		possibleConnections:  connectionPermutations,
 		theme:                color2.NewDefaultTheme(),
 		nextConnectionsIndex: rand.Intn(len(connectionPermutations)),
-		ScreenWidth:          int(screenWidth),
-		ScreenHeight:         int(screenHeight),
+		ScreenWidth:          screenWidth,
+		ScreenHeight:         screenHeight,
 	}
 }
 
 func newHexes() (hexes []*hexagon.Hex) {
 	xBuffer := marginSize + hexagon.HexSideRadius
-	yBuffer := float64(marginSize + hexagon.HexVertexRadius)
+	yBuffer := float64(marginSize + hexagon.HexVertexRadius + scoreTextSize)
 	for rowNum := 0; rowNum < rows; rowNum++ {
 		for colNum := 0; colNum < cols; colNum++ {
 			x := float64(colNum) * hexagon.HexSideRadius
@@ -88,6 +98,7 @@ func newHexes() (hexes []*hexagon.Hex) {
 func (this *Game) Draw(screen *ebiten.Image) {
 	var hoveredHex *hexagon.Hex = nil
 	screen.Fill(this.theme.BackgroundColor)
+	this.drawScore(screen)
 	for _, hex := range this.hexes {
 		draw.Hexagon(screen, hex, this.theme.HexBorderColor)
 	}
@@ -135,13 +146,11 @@ func (this *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 func (this *Game) Update() error {
 	if this.disabledTicksLeft > 0 {
 		this.disabledTicksLeft--
-		if this.disabledTicksLeft == 1 {
-			for _, loop := range this.loops {
-				for _, hexConnection := range loop {
-					hexConnection.Hex.Connections = nil
-				}
+		if this.disabledTicksLeft == 0 {
+			this.resetLoops()
+			if this.boardEmpty() {
+				this.updateScore(clearBoardBonus)
 			}
-			this.loops = nil
 		}
 		return nil
 	}
@@ -149,11 +158,31 @@ func (this *Game) Update() error {
 	// TODO don't allow dragging?
 	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
 		this.updateClickedHex(mouseX, mouseY)
+		this.updateScore(calculatePoints(this.loops))
 	} else {
 		this.updateHoveredHex(mouseX, mouseY)
 	}
-
 	return nil
+}
+
+func (this *Game) updateScore(points int) {
+	this.score += points
+	if points > 0 {
+		fmt.Println(this.score)
+	}
+}
+
+func loopPointFormula(n int) int {
+	nFloat := float64(n)
+	return int((nFloat / 2) * ((2 * lowestPointValue) + (nFloat-1)*increment))
+}
+
+func calculatePoints(loops [][]hexagon.HexConnection) int {
+	connectionPoints := 0
+	for _, loop := range loops {
+		connectionPoints += loopPointFormula(len(loop))
+	}
+	return connectionPoints * len(loops)
 }
 
 func (this *Game) updateClickedHex(mouseX, mouseY int) {
@@ -257,7 +286,6 @@ func (this *Game) checkForCompleteLoops(hex *hexagon.Hex) (loops [][]hexagon.Hex
 			}
 		}
 	}
-	// check loops for duplicates
 	return loops
 }
 
@@ -326,6 +354,51 @@ func (this *Game) getNextHexConnection(hex *hexagon.Hex, connectedSide int, hove
 		Hex:        borderHex,
 		Connection: hexagon.Connection{originSide, nextConnectedSide},
 	}
+}
+
+func (this *Game) boardEmpty() bool {
+	for _, hex := range this.hexes {
+		if !hex.Empty() {
+			return false
+		}
+	}
+	return true
+}
+
+func (this *Game) resetLoops() {
+	for _, loop := range this.loops {
+		for _, hexConnection := range loop {
+			hexConnection.Hex.Connections = nil
+		}
+	}
+	this.loops = nil
+}
+
+func (this *Game) drawScore(screen *ebiten.Image) {
+	text.Draw(screen, scoreString(this.score), getTextFace(), getDrawOptions(this.theme.ConnectionColor))
+}
+
+func scoreString(score int) string {
+	return fmt.Sprintf("Score: %d", score)
+}
+
+func getTextFace() text.Face {
+	fontFaceSource, err := text.NewGoTextFaceSource(bytes.NewReader(fonts.MPlus1pRegular_ttf))
+	if err != nil {
+		log.Fatal(err)
+	}
+	textFace := &text.GoTextFace{
+		Source: fontFaceSource,
+		Size:   scoreTextSize,
+	}
+	return textFace
+}
+
+func getDrawOptions(clr color.RGBA) *text.DrawOptions {
+	drawOptions := &text.DrawOptions{}
+	drawOptions.GeoM.Translate(20, marginSize/2)
+	drawOptions.ColorScale.ScaleWithColor(clr)
+	return drawOptions
 }
 
 func isEven(x int) bool {
