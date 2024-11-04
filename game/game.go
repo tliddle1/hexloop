@@ -48,6 +48,8 @@ var (
 	}
 )
 
+// TODO make unit tests
+
 // Game represents the game state
 type Game struct {
 	hexes                     []*hexagon.Hex // List of hexagons
@@ -62,7 +64,7 @@ type Game struct {
 
 // NewGame initializes the game state
 func NewGame() *Game {
-	hexGridWidth := hexagon.HexSideRadius * (cols + 1)
+	hexGridWidth := hexagon.HexSideRadius * (cols + 1 + 3) // +3 to accommodate for the current hexagon
 	hexGridHeight := hexagon.HexVertexRadius * (rows*3 + 0.5)
 	screenWidth := int(hexGridWidth) + marginSize*2
 	screenHeight := int(hexGridHeight) + marginSize*2 + scoreTextSize
@@ -77,18 +79,10 @@ func NewGame() *Game {
 }
 
 func newHexes() (hexes []*hexagon.Hex) {
-	xBuffer := marginSize + hexagon.HexSideRadius
-	yBuffer := float64(marginSize + hexagon.HexVertexRadius + scoreTextSize)
+	origin := getFirstHexCoordinate()
 	for rowNum := 0; rowNum < rows; rowNum++ {
 		for colNum := 0; colNum < cols; colNum++ {
-			x := float64(colNum) * hexagon.HexSideRadius
-			y := float64(rowNum) * hexagon.HexVertexRadius * 3
-			// Offset odd rows to create staggered effect
-			if colNum%2 != 0 {
-				y += hexagon.HexVertexRadius * 1.5
-			}
-			newHex := hexagon.Hex{Col: colNum, Row: rowNum, Center: hexagon.Coordinate{x + xBuffer, y + yBuffer}}
-			hexes = append(hexes, &newHex)
+			hexes = append(hexes, hexagon.NewHex(colNum, rowNum, origin[0], origin[1]))
 		}
 	}
 	return hexes
@@ -96,44 +90,24 @@ func newHexes() (hexes []*hexagon.Hex) {
 
 // Draw renders the game state
 func (this *Game) Draw(screen *ebiten.Image) {
-	var hoveredHex *hexagon.Hex = nil
 	screen.Fill(this.theme.BackgroundColor)
 	this.drawScore(screen)
+	this.drawHexagonBoard(screen)
+	this.drawPlacedHexagons(screen)
+	this.drawCurrentHexPattern(screen)
+	this.drawPendingHex(screen)
+	this.drawLoops(screen)
+}
+
+func (this *Game) getHoveredHex() *hexagon.Hex {
 	for _, hex := range this.hexes {
-		draw.Hexagon(screen, hex, this.theme.HexBorderColor)
-	}
-	for _, hex := range this.hexes {
-		draw.HexagonConnections(screen, *hex, this.theme)
 		if hex.Hovered && this.disabledTicksLeft == 0 {
-			//drawPendingHexagonConnection(screen, *hex, this.nextConnections(), this.theme)
 			if len(hex.Connections) == 0 {
-				hoveredHex = hex
-				draw.Hexagon(screen, hoveredHex, this.theme.PendingHexBorderColor)
+				return hex
 			}
 		}
 	}
-	draw.Loops(screen, this.loops, this.theme.BackgroundColor)
-	// TODO make unit test
-	if hoveredHex != nil {
-		nextConns := this.nextConnections()
-		for i := range nextConns {
-			for j := range nextConns[i] {
-				side := nextConns[i][j]
-				nextHex := hoveredHex
-				draw.HexagonConnection(screen, *nextHex, nextConns[i], this.theme.PendingConnectionColors[i%3], this.theme.BackgroundColor)
-				nextSide := side
-				drawn := true
-				k := 0
-				for {
-					nextHex, nextSide, drawn = this.drawPendingLoops(screen, nextHex, nextSide, hoveredHex, this.theme.PendingConnectionColors[i%3])
-					if !drawn || nextHex == nil || k > rows*cols*5 {
-						break
-					}
-					k++
-				}
-			}
-		}
-	}
+	return nil
 }
 
 // Layout sets the screen size
@@ -378,7 +352,66 @@ func (this *Game) drawScore(screen *ebiten.Image) {
 	text.Draw(screen, scoreString(this.score), getTextFace(), getDrawOptions(this.theme.ConnectionColor))
 }
 
+func (this *Game) drawHexagonBoard(screen *ebiten.Image) {
+	for _, hex := range this.hexes {
+		draw.Hexagon(screen, hex, this.theme.HexBorderColor)
+	}
+}
+
+func (this *Game) drawPlacedHexagons(screen *ebiten.Image) {
+	for _, hex := range this.hexes {
+		draw.HexagonConnections(screen, *hex, this.theme)
+	}
+}
+
+func (this *Game) drawPendingConnections(screen *ebiten.Image, hex *hexagon.Hex) {
+	nextConns := this.nextConnections()
+	for i := range nextConns {
+		for j := range nextConns[i] {
+			side := nextConns[i][j]
+			nextHex := hex
+			draw.HexagonConnection(screen, *nextHex, nextConns[i], this.theme.PendingConnectionColors[i%3], this.theme.BackgroundColor)
+			nextSide := side
+			drawn := true
+			k := 0
+			for {
+				nextHex, nextSide, drawn = this.drawPendingLoops(screen, nextHex, nextSide, hex, this.theme.PendingConnectionColors[i%3])
+				if !drawn || nextHex == nil || k > rows*cols*5 {
+					break
+				}
+				k++
+			}
+		}
+	}
+}
+
+func (this *Game) drawCurrentHexPattern(screen *ebiten.Image) {
+	origin := getFirstHexCoordinate()
+	currentHex := hexagon.NewHex(cols+2, 0, origin[0], origin[1])
+	draw.Hexagon(screen, currentHex, this.theme.PendingHexBorderColor)
+	this.drawPendingConnections(screen, currentHex)
+}
+
+func getFirstHexCoordinate() hexagon.Coordinate {
+	xBuffer := marginSize + hexagon.HexSideRadius
+	yBuffer := float64(marginSize + hexagon.HexVertexRadius + scoreTextSize)
+	return [2]float64{xBuffer, yBuffer}
+}
+
+func (this *Game) drawPendingHex(screen *ebiten.Image) {
+	hoveredHex := this.getHoveredHex()
+	if hoveredHex != nil {
+		draw.Hexagon(screen, hoveredHex, this.theme.PendingHexBorderColor)
+		this.drawPendingConnections(screen, hoveredHex)
+	}
+}
+
+func (this *Game) drawLoops(screen *ebiten.Image) {
+	draw.Loops(screen, this.loops, this.theme.BackgroundColor)
+}
+
 func scoreString(score int) string {
+	// todo add commas
 	return fmt.Sprintf("Score: %d", score)
 }
 

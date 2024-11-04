@@ -98,3 +98,13 @@ type HexConnection struct {
 	Hex        *Hex
 	Connection Connection
 }
+
+func NewHex(col, row int, originX, originY float64) *Hex {
+	x := float64(col) * HexSideRadius
+	y := float64(row) * HexVertexRadius * 3
+	// Offset odd rows to create staggered effect
+	if col%2 != 0 {
+		y += HexVertexRadius * 1.5
+	}
+	return &Hex{Col: col, Row: row, Center: Coordinate{x + originX, y + originY}}
+}
