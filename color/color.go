@@ -26,6 +26,7 @@ func NewBeeTheme() *Theme {
 		},
 	}
 }
+
 func NewBlueTheme() *Theme {
 	return &Theme{
 		BackgroundColor:       HexToRGB("#53687E"), // Payne's Gray

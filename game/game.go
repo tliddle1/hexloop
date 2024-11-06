@@ -49,6 +49,9 @@ var (
 )
 
 // TODO make unit tests
+// TODO Game Over
+// TODO Start Over
+// TODO Landing Page
 
 // Game represents the game state
 type Game struct {
@@ -141,9 +144,9 @@ func (this *Game) Update() error {
 
 func (this *Game) updateScore(points int) {
 	this.score += points
-	if points > 0 {
-		fmt.Println(this.score)
-	}
+	//if points > 0 {
+	//	fmt.Println(this.score)
+	//}
 }
 
 func loopPointFormula(n int) int {
@@ -365,6 +368,7 @@ func (this *Game) drawPlacedHexagons(screen *ebiten.Image) {
 }
 
 func (this *Game) drawPendingConnections(screen *ebiten.Image, hex *hexagon.Hex) {
+	// TODO make connection normal color (or black) if it touches a wall
 	nextConns := this.nextConnections()
 	for i := range nextConns {
 		for j := range nextConns[i] {
