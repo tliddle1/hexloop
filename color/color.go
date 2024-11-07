@@ -11,6 +11,7 @@ type Theme struct {
 	ConnectionColor         color.RGBA
 	PendingHexBorderColor   color.RGBA
 	PendingConnectionColors []color.RGBA
+	CompletedLoopColor      color.RGBA
 }
 
 func NewBeeTheme() *Theme {
@@ -24,6 +25,7 @@ func NewBeeTheme() *Theme {
 			{R: 0, G: 0, B: 255, A: 255},   // Blue
 			{R: 255, G: 0, B: 255, A: 255}, // Magenta
 		},
+		CompletedLoopColor: color.RGBA{R: 255, G: 0, B: 0, A: 255},
 	}
 }
 
@@ -38,6 +40,7 @@ func NewBlueTheme() *Theme {
 			{R: 255, G: 165, B: 0, A: 255}, // Orange
 			{R: 255, G: 0, B: 255, A: 255}, // Magenta
 		},
+		CompletedLoopColor: color.RGBA{R: 255, G: 0, B: 0, A: 255},
 	}
 }
 func NewDefaultTheme() *Theme {

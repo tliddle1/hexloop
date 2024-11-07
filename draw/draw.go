@@ -105,10 +105,10 @@ func SmallCurveConnection(screen *ebiten.Image, vertices []hexagon.Coordinate, v
 	vector.StrokePartialCircle(screen, x, y, hexagon.HexVertexRadius/2, math.Pi/2+adjustor, -math.Pi*5/6+adjustor, strokeWidth, connectionColor, true)
 }
 
-func Loops(screen *ebiten.Image, loops [][]hexagon.HexConnection, backgroundColor color.RGBA) {
+func Loops(screen *ebiten.Image, loops [][]hexagon.HexConnection, completedLoopColor, backgroundColor color.RGBA) {
 	for _, loop := range loops {
 		for _, hexConnection := range loop {
-			HexagonConnection(screen, *hexConnection.Hex, hexConnection.Connection, color.RGBA{R: 255, G: 0, B: 0, A: 255}, backgroundColor)
+			HexagonConnection(screen, *hexConnection.Hex, hexConnection.Connection, completedLoopColor, backgroundColor)
 		}
 	}
 }
