@@ -54,6 +54,7 @@ var (
 // TODO Landing Page (Play, Themes, How To Play)
 // TODO Puzzle Mode (set of tiles to make one loop?)
 // TODO Challenge Mode (obstacles?, hexes to clear?
+// TODO Add internal timer (https://arc.net/l/quote/vlbnnjos)
 
 // Game represents the game state
 type Game struct {
@@ -66,6 +67,7 @@ type Game struct {
 	disabledTicksLeft         int
 	score                     int
 	highScore                 int // TODO
+	gameInProgress            bool
 }
 
 // NewGame initializes the game state
@@ -73,7 +75,7 @@ func NewGame() *Game {
 	hexGridWidth := hexagon.HexSideRadius * (cols + 1) // +3 in parentheses if you want to accommodate for the current hexagon on the sidebar
 	hexGridHeight := hexagon.HexVertexRadius * (rows*3 + 0.5)
 	screenWidth := int(hexGridWidth) + marginSize*2
-	screenHeight := int(hexGridHeight) + marginSize*2 + scoreTextSize
+	screenHeight := int(hexGridHeight) + marginSize*2 + scoreTextSize + scoreTextSize
 	return &Game{
 		hexes:                newHexes(),
 		possibleConnections:  connectionPermutations,
@@ -81,6 +83,7 @@ func NewGame() *Game {
 		nextConnectionsIndex: rand.Intn(len(connectionPermutations)),
 		ScreenWidth:          screenWidth,
 		ScreenHeight:         screenHeight,
+		gameInProgress:       true,
 	}
 }
 
@@ -98,6 +101,7 @@ func newHexes() (hexes []*hexagon.Hex) {
 func (this *Game) Draw(screen *ebiten.Image) {
 	screen.Fill(this.theme.BackgroundColor)
 	this.drawScore(screen)
+	this.drawHighScore(screen)
 	this.drawHexagonBoard(screen)
 	this.drawPlacedHexagons(screen)
 	//this.drawCurrentHexPattern(screen)
@@ -124,24 +128,42 @@ func (this *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 
 // Update handles game logic updates
 func (this *Game) Update() error {
-	if this.disabledTicksLeft > 0 {
-		this.disabledTicksLeft--
-		if this.disabledTicksLeft == 0 {
-			this.removeCompletedLoops()
-			if this.boardEmpty() {
-				this.updateScore(clearBoardBonus)
-			}
-		}
-		return nil
+	if this.gameOver() && this.gameInProgress {
+		this.gameInProgress = false
+		fmt.Println("Game over")
+		this.highScore = max(this.highScore, this.score)
+		this.startOver()
+	} else if this.gameInProgress {
+		fmt.Println("Not over")
 	}
+	if this.gameInProgress {
+		// this.updateGameInProgress()
+		if this.disabledTicksLeft > 0 {
+			this.disabledTicksLeft--
+			if this.disabledTicksLeft == 0 {
+				this.removeCompletedLoops()
+				if this.boardEmpty() {
+					this.updateScore(clearBoardBonus)
+				}
+			}
+			return nil
+		}
 
-	mouseX, mouseY := ebiten.CursorPosition()
-	// TODO don't allow dragging?
-	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
-		this.updateClickedHex(mouseX, mouseY)
-		this.updateScore(calculatePoints(this.loops))
+		mouseX, mouseY := ebiten.CursorPosition()
+		// TODO don't allow dragging?
+		if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
+			this.updateClickedHex(mouseX, mouseY)
+			this.updateScore(calculatePoints(this.loops))
+		} else {
+			this.updateHoveredHex(mouseX, mouseY)
+		}
 	} else {
-		this.updateHoveredHex(mouseX, mouseY)
+		if this.disabledTicksLeft > 0 {
+			this.disabledTicksLeft--
+		}
+		if this.disabledTicksLeft == 0 {
+			this.gameInProgress = true
+		}
 	}
 	return nil
 }
@@ -310,7 +332,7 @@ func (this *Game) removeCompletedLoops() {
 }
 
 func (this *Game) drawScore(screen *ebiten.Image) {
-	text.Draw(screen, scoreString(this.score), getTextFace(), getDrawOptions(this.theme.ConnectionColor))
+	text.Draw(screen, scoreString(this.score), getTextFace(), getDrawScoreOptions(this.theme.ConnectionColor))
 }
 
 func (this *Game) drawHexagonBoard(screen *ebiten.Image) {
@@ -403,7 +425,7 @@ func (this *Game) getNextHexConnection(hex *hexagon.Hex, connectedSide int, hove
 
 func getFirstHexCoordinate() hexagon.Coordinate {
 	xBuffer := marginSize + hexagon.HexSideRadius
-	yBuffer := float64(marginSize + hexagon.HexVertexRadius + scoreTextSize)
+	yBuffer := float64(marginSize + hexagon.HexVertexRadius + (scoreTextSize * 2))
 	return [2]float64{xBuffer, yBuffer}
 }
 
@@ -417,6 +439,33 @@ func (this *Game) drawPendingHex(screen *ebiten.Image) {
 
 func (this *Game) drawCompletedLoops(screen *ebiten.Image) {
 	draw.Loops(screen, this.loops, this.theme.CompletedLoopColor, this.theme.BackgroundColor)
+}
+
+func (this *Game) gameOver() bool {
+	for _, hex := range this.hexes {
+		if hex.Empty() {
+			return false
+		}
+	}
+	return this.disabledTicksLeft == 0
+}
+
+func (this *Game) drawHighScore(screen *ebiten.Image) {
+	text.Draw(screen, highScoreString(this.highScore), getTextFace(), getDrawHighScoreOptions(this.theme.ConnectionColor))
+}
+
+func (this *Game) startOver() {
+	for _, hex := range this.hexes {
+		hex.Reset()
+	}
+	this.score = 0
+	this.loops = nil
+	this.disabledTicksLeft = 200
+}
+
+func highScoreString(score int) string {
+	// todo add commas
+	return fmt.Sprintf("High Score: %d", score)
 }
 
 func scoreString(score int) string {
@@ -436,7 +485,13 @@ func getTextFace() text.Face {
 	return textFace
 }
 
-func getDrawOptions(clr color.RGBA) *text.DrawOptions {
+func getDrawScoreOptions(clr color.RGBA) *text.DrawOptions {
+	drawOptions := &text.DrawOptions{}
+	drawOptions.GeoM.Translate(79, marginSize/2+marginSize)
+	drawOptions.ColorScale.ScaleWithColor(clr)
+	return drawOptions
+}
+func getDrawHighScoreOptions(clr color.RGBA) *text.DrawOptions {
 	drawOptions := &text.DrawOptions{}
 	drawOptions.GeoM.Translate(20, marginSize/2)
 	drawOptions.ColorScale.ScaleWithColor(clr)

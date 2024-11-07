@@ -86,6 +86,11 @@ func (this *Hex) Equals(hex *Hex) bool {
 	return true
 }
 
+func (this *Hex) Reset() {
+	this.Hovered = false
+	this.Connections = nil
+}
+
 func getXCoordinateFromPolar(centerX, radius, angle float64) float64 {
 	return centerX + radius*math.Cos(angle)
 }
