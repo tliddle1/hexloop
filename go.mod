@@ -1,4 +1,4 @@
-module github.com/tliddle1/game
+module github.com/tliddle1/hexloop
 
 go 1.23.2
 

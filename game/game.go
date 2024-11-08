@@ -10,9 +10,9 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/examples/resources/fonts"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
-	color2 "github.com/tliddle1/game/color"
-	"github.com/tliddle1/game/draw"
-	"github.com/tliddle1/game/hexagon"
+	color2 "github.com/tliddle1/hexloop/color"
+	"github.com/tliddle1/hexloop/draw"
+	"github.com/tliddle1/hexloop/hexagon"
 )
 
 const (
@@ -130,11 +130,8 @@ func (this *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 func (this *Game) Update() error {
 	if this.gameOver() && this.gameInProgress {
 		this.gameInProgress = false
-		fmt.Println("Game over")
 		this.highScore = max(this.highScore, this.score)
 		this.startOver()
-	} else if this.gameInProgress {
-		fmt.Println("Not over")
 	}
 	if this.gameInProgress {
 		// this.updateGameInProgress()

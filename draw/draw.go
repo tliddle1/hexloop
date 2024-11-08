@@ -5,9 +5,9 @@ import (
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	color2 "github.com/tliddle1/game/color"
-	"github.com/tliddle1/game/hexagon"
-	"github.com/tliddle1/game/vector"
+	color2 "github.com/tliddle1/hexloop/color"
+	"github.com/tliddle1/hexloop/hexagon"
+	"github.com/tliddle1/hexloop/vector"
 )
 
 const (

@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/tliddle1/game/game"
+	"github.com/tliddle1/hexloop/game"
 )
 
 func main() {
