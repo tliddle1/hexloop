@@ -5,6 +5,7 @@ import (
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/text/v2"
 	color2 "github.com/tliddle1/hexloop/color"
 	"github.com/tliddle1/hexloop/hexagon"
 	"github.com/tliddle1/hexloop/vector"
@@ -33,6 +34,18 @@ func Hexagon(screen *ebiten.Image, hex *hexagon.Hex, borderColor color.RGBA) {
 			borderColor,
 			true)
 	}
+}
+
+func TextHexagon(screen *ebiten.Image, hex *hexagon.TextHexagon, borderColor, connectionColor color.RGBA) {
+	Hexagon(screen, hex.Hex, borderColor)
+	x, y := hex.Center[0], hex.Center[1]
+	fontSize := hex.TextSize
+	face := hex.GetTextFace(fontSize)
+	offset := text.Advance(hex.Str, face)
+	drawOptions := &text.DrawOptions{}
+	drawOptions.GeoM.Translate(x-(offset/2), y-(fontSize*2/3))
+	drawOptions.ColorScale.ScaleWithColor(connectionColor)
+	text.Draw(screen, hex.Str, face, drawOptions)
 }
 
 func HexagonConnections(screen *ebiten.Image, hex *hexagon.Hex, connectionColor color.RGBA, theme *color2.Theme) {

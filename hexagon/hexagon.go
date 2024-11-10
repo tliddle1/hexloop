@@ -1,7 +1,12 @@
 package hexagon
 
 import (
+	"bytes"
+	"log"
 	"math"
+
+	"github.com/hajimehoshi/ebiten/v2/examples/resources/fonts"
+	"github.com/hajimehoshi/ebiten/v2/text/v2"
 )
 
 const (
@@ -130,3 +135,29 @@ type HexConnection struct {
 }
 
 type Loop []HexConnection
+
+type TextHexagon struct {
+	*Hex
+	Str      string
+	TextSize float64
+}
+
+func (this *TextHexagon) GetTextFace(textSize float64) text.Face {
+	fontFaceSource, err := text.NewGoTextFaceSource(bytes.NewReader(fonts.MPlus1pRegular_ttf))
+	if err != nil {
+		log.Fatal(err)
+	}
+	textFace := &text.GoTextFace{
+		Source: fontFaceSource,
+		Size:   textSize,
+	}
+	return textFace
+}
+
+func NewTextHexagon(col, row int, originX, originY, hexVertexRadius float64, edgeWidth, connectionWidth float32, str string, testSize float64) *TextHexagon {
+	return &TextHexagon{
+		Hex:      NewHex(col, row, originX, originY, hexVertexRadius, edgeWidth, connectionWidth),
+		Str:      str,
+		TextSize: testSize,
+	}
+}

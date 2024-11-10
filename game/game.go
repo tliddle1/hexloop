@@ -73,10 +73,10 @@ type Game struct {
 	ScreenWidth, ScreenHeight int
 	disabledTicksLeft         int
 	score                     int
-	highScore                 int // TODO
+	highScore                 int // TODO get highScore to work on web
 	gameInProgress            bool
 	currentScene              scene
-	StartButton               *hexagon.Hex
+	titleHexes                []*hexagon.TextHexagon
 }
 
 // NewGame initializes the game state
@@ -93,8 +93,46 @@ func NewGame() *Game {
 		ScreenWidth:          screenWidth,
 		ScreenHeight:         screenHeight,
 		gameInProgress:       true,
-		currentScene:         gameScreen,
+		currentScene:         titleScreen,
+		titleHexes:           newTitleHexes(screenWidth, screenHeight),
 	}
+}
+
+func newTitleHexes(screenWidth, screenHeight int) (titleHexes []*hexagon.TextHexagon) {
+	originX := float64(screenWidth) / 2
+	originY := float64(screenHeight)/2 - (hexagon.HexVertexRadiusTest * 2.5)
+	for row := range 2 {
+		for col := -3; col < 4; col++ {
+			str := ""
+			textSize := float64(scoreTextSize)
+			if row == 0 && col == -2 {
+				str = "H"
+				textSize = float64(scoreTextSize * 3)
+			} else if row == 0 && col == 0 {
+				str = "E"
+				textSize = float64(scoreTextSize * 3)
+			} else if row == 0 && col == 2 {
+				str = "X"
+				textSize = float64(scoreTextSize * 3)
+			} else if row == 0 && col == -3 {
+				str = "L"
+				textSize = float64(scoreTextSize * 3)
+			} else if row == 0 && (col == -1 || col == 1) {
+				str = "O"
+				textSize = float64(scoreTextSize * 3)
+			} else if row == 0 && col == 3 {
+				str = "P"
+				textSize = float64(scoreTextSize * 3)
+			} else if row == 1 && col == -3 {
+				str = "Start"
+			} else if row == 1 && col == 3 {
+				str = "Tutorial"
+			}
+			hex := hexagon.NewTextHexagon(col, row, originX, originY, hexagon.HexVertexRadiusTest, draw.TitleHexagonStrokeWidth, draw.TitleConnectionWidth, str, textSize)
+			titleHexes = append(titleHexes, hex)
+		}
+	}
+	return titleHexes
 }
 
 func newHexes(numRows, numCols int, vertexRadius float64, edgeWidth, connectionWidth float32, origin hexagon.Coordinate) (hexes []*hexagon.Hex) {
@@ -135,8 +173,7 @@ func (this *Game) Update() error {
 		} else {
 			if this.disabledTicksLeft > 0 {
 				this.disabledTicksLeft--
-			}
-			if this.disabledTicksLeft == 0 {
+			} else if this.disabledTicksLeft == 0 {
 				this.startOver()
 				this.gameInProgress = true
 			}
@@ -362,110 +399,8 @@ func (this *Game) drawHexagonGameBoard(screen *ebiten.Image) {
 }
 
 func (this *Game) drawHexagonTitleBoard(screen *ebiten.Image) {
-	originX := float64(this.ScreenWidth) / 2
-	originY := float64(this.ScreenHeight)/2 - (hexagon.HexVertexRadiusTest * 2.5)
-	for row := range 2 {
-		for col := -3; col < 4; col++ {
-			hex := hexagon.NewHex(col, row, originX, originY, hexagon.HexVertexRadiusTest, draw.TitleHexagonStrokeWidth, draw.TitleConnectionWidth)
-			draw.Hexagon(screen, hex, this.theme.HexBorderColor)
-			if row == 0 && col == -2 {
-				// H
-				x, y := hex.Center[0], hex.Center[1]
-				fontSize := float64(scoreTextSize * 3)
-				face := getTextFace(fontSize)
-				str := "H"
-				offset := text.Advance(str, face)
-				drawOptions := &text.DrawOptions{}
-				drawOptions.GeoM.Translate(x-(offset/2), y-(fontSize*2/3))
-				drawOptions.ColorScale.ScaleWithColor(this.theme.ConnectionColor)
-				text.Draw(screen, str, face, drawOptions)
-			}
-			if row == 0 && col == 0 {
-				// E
-				x, y := hex.Center[0], hex.Center[1]
-				fontSize := float64(scoreTextSize * 3)
-				face := getTextFace(fontSize)
-				str := "E"
-				offset := text.Advance(str, face)
-				drawOptions := &text.DrawOptions{}
-				drawOptions.GeoM.Translate(x-(offset/2), y-(fontSize*2/3))
-				drawOptions.ColorScale.ScaleWithColor(this.theme.ConnectionColor)
-				text.Draw(screen, str, face, drawOptions)
-			}
-			if row == 0 && col == 2 {
-				// X
-				x, y := hex.Center[0], hex.Center[1]
-				fontSize := float64(scoreTextSize * 3)
-				face := getTextFace(fontSize)
-				str := "X"
-				offset := text.Advance(str, face)
-				drawOptions := &text.DrawOptions{}
-				drawOptions.GeoM.Translate(x-(offset/2), y-(fontSize*2/3))
-				drawOptions.ColorScale.ScaleWithColor(this.theme.ConnectionColor)
-				text.Draw(screen, str, face, drawOptions)
-			}
-			if row == 0 && col == -3 {
-				// L
-				x, y := hex.Center[0], hex.Center[1]
-				fontSize := float64(scoreTextSize * 3)
-				face := getTextFace(fontSize)
-				str := "L"
-				offset := text.Advance(str, face)
-				drawOptions := &text.DrawOptions{}
-				drawOptions.GeoM.Translate(x-(offset/2), y-(fontSize*2/3))
-				drawOptions.ColorScale.ScaleWithColor(this.theme.ConnectionColor)
-				text.Draw(screen, str, face, drawOptions)
-			}
-			if row == 0 && (col == -1 || col == 1) {
-				// O
-				x, y := hex.Center[0], hex.Center[1]
-				fontSize := float64(scoreTextSize * 3)
-				face := getTextFace(fontSize)
-				str := "O"
-				offset := text.Advance(str, face)
-				drawOptions := &text.DrawOptions{}
-				drawOptions.GeoM.Translate(x-(offset/2), y-(fontSize*2/3))
-				drawOptions.ColorScale.ScaleWithColor(this.theme.ConnectionColor)
-				text.Draw(screen, str, face, drawOptions)
-			}
-			if row == 0 && col == 3 {
-				// P
-				x, y := hex.Center[0], hex.Center[1]
-				fontSize := float64(scoreTextSize * 3)
-				face := getTextFace(fontSize)
-				str := "P"
-				offset := text.Advance(str, face)
-				drawOptions := &text.DrawOptions{}
-				drawOptions.GeoM.Translate(x-(offset/2), y-(fontSize*2/3))
-				drawOptions.ColorScale.ScaleWithColor(this.theme.ConnectionColor)
-				text.Draw(screen, str, face, drawOptions)
-			}
-			if row == 1 && col == -3 {
-				// Start
-				this.StartButton = hex
-				x, y := hex.Center[0], hex.Center[1]
-				fontSize := float64(scoreTextSize)
-				face := getTextFace(fontSize)
-				str := "Start"
-				offset := text.Advance(str, face)
-				drawOptions := &text.DrawOptions{}
-				drawOptions.GeoM.Translate(x-(offset/2), y-(fontSize*2/3))
-				drawOptions.ColorScale.ScaleWithColor(this.theme.ConnectionColor)
-				text.Draw(screen, str, face, drawOptions)
-			}
-			if row == 1 && col == 3 {
-				// Start
-				x, y := hex.Center[0], hex.Center[1]
-				fontSize := float64(scoreTextSize)
-				face := getTextFace(fontSize)
-				str := "Tutorial"
-				offset := text.Advance(str, face)
-				drawOptions := &text.DrawOptions{}
-				drawOptions.GeoM.Translate(x-(offset/2), y-(fontSize*2/3))
-				drawOptions.ColorScale.ScaleWithColor(this.theme.ConnectionColor)
-				text.Draw(screen, str, face, drawOptions)
-			}
-		}
+	for _, hex := range this.titleHexes {
+		draw.TextHexagon(screen, hex, this.theme.HexBorderColor, this.theme.ConnectionColor)
 	}
 }
 
@@ -599,8 +534,9 @@ func (this *Game) updateGameInProgress() {
 	if this.disabledTicksLeft > 0 {
 		this.disabledTicksLeft--
 		if this.disabledTicksLeft == 0 {
+			newGame := this.boardEmpty()
 			this.removeCompletedLoops()
-			if this.boardEmpty() {
+			if this.boardEmpty() && !newGame {
 				this.updateScore(clearBoardBonus)
 			}
 		}
@@ -643,13 +579,22 @@ func (this *Game) updateTitleScreen() {
 	mouseX, mouseY := ebiten.CursorPosition()
 	// TODO don't allow dragging?
 	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
-		if this.StartButton.PointInHexagon(float64(mouseX), float64(mouseY)) {
+		startButton := this.getStartButton()
+		if startButton != nil && startButton.PointInHexagon(float64(mouseX), float64(mouseY)) {
 			this.currentScene = gameScreen
-			this.gameInProgress = true
 			// TODO handle transition gracefully
 			this.disabledTicksLeft = 50
 		}
 	}
+}
+
+func (this *Game) getStartButton() *hexagon.TextHexagon {
+	for _, hex := range this.titleHexes {
+		if hex.Row == 1 && hex.Col == -3 {
+			return hex
+		}
+	}
+	return nil
 }
 
 func highScoreString(score int) string {
