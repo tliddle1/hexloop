@@ -1,12 +1,16 @@
 package hexagon
 
-import "math"
+import (
+	"math"
+)
 
 const (
-	sqrt3           = 1.7320508075688772
-	HexVertexRadius = 30 // Distance from center of hexagon to vertex
-	HexSideRadius   = HexVertexRadius * sqrt3 / 2
-	NumHexagonSides = 6
+	sqrt3               = 1.7320508075688772
+	HexVertexRadiusTest = 60
+	HexSideRadiusTest   = HexVertexRadiusTest * sqrt3 / 2
+	HexVertexRadius     = 30 // Distance from center of hexagon to vertex
+	HexSideRadius       = HexVertexRadius * sqrt3 / 2
+	NumHexagonSides     = 6
 )
 
 type Connection [2]int
@@ -18,10 +22,31 @@ type Coordinate [2]float64
 
 // Hex represents a hexagonal tile
 type Hex struct {
-	Col, Row    int        // Column and Row
-	Center      Coordinate // center of the hex
-	Connections []Connection
-	Hovered     bool
+	Col, Row                   int // Column and Row
+	VertexRadius, SideRadius   float64
+	EdgeWidth, ConnectionWidth float32
+	Center                     Coordinate // center of the hex
+	Connections                []Connection
+	Hovered                    bool
+}
+
+func NewHex(col, row int, originX, originY, hexVertexRadius float64, edgeWidth, connectionWidth float32) *Hex {
+	hexSideRadius := hexVertexRadius * sqrt3 / 2
+	x := float64(col) * hexSideRadius
+	y := float64(row) * hexVertexRadius * 3
+	// Offset odd rows to create staggered effect
+	if col%2 != 0 {
+		y += hexVertexRadius * 1.5
+	}
+	return &Hex{
+		Col:             col,
+		Row:             row,
+		VertexRadius:    hexVertexRadius,
+		EdgeWidth:       edgeWidth,
+		ConnectionWidth: connectionWidth,
+		SideRadius:      hexSideRadius,
+		Center:          Coordinate{x + originX, y + originY},
+	}
 }
 
 func (this *Hex) Empty() bool {
@@ -33,8 +58,8 @@ func (this *Hex) VertexCoordinates() []Coordinate {
 	vertices := make([]Coordinate, NumHexagonSides)
 	for i := 0; i < NumHexagonSides; i++ {
 		angle := math.Pi/3*float64(i) - math.Pi/6
-		x := getXCoordinateFromPolar(this.Center[0], HexVertexRadius, angle)
-		y := getYCoordinateFromPolar(this.Center[1], HexVertexRadius, angle)
+		x := getXCoordinateFromPolar(this.Center[0], this.VertexRadius, angle)
+		y := getYCoordinateFromPolar(this.Center[1], this.VertexRadius, angle)
 		vertices[i] = Coordinate{x, y}
 	}
 	return vertices
@@ -45,18 +70,18 @@ func (this *Hex) HexagonSideCoordinates() []Coordinate {
 	sides := make([]Coordinate, NumHexagonSides)
 	for i := 0; i < NumHexagonSides; i++ {
 		angle := math.Pi / 3 * float64(i-1)
-		x := getXCoordinateFromPolar(this.Center[0], HexSideRadius, angle)
-		y := getYCoordinateFromPolar(this.Center[1], HexSideRadius, angle)
+		x := getXCoordinateFromPolar(this.Center[0], this.SideRadius, angle)
+		y := getYCoordinateFromPolar(this.Center[1], this.SideRadius, angle)
 		sides[i] = Coordinate{x, y}
 	}
 	return sides
 }
 
 // PointInHexagon checks if a point is inside the hexagon
-func (this *Hex) PointInHexagon(px, py, radius float64) bool {
+func (this *Hex) PointInHexagon(px, py float64) bool {
 	buffer := .1 // prevents two hexagons being selected at once
-	dx := math.Abs(px-this.Center[0]) / radius
-	dy := math.Abs(py-this.Center[1]) / radius
+	dx := math.Abs(px-this.Center[0]) / this.VertexRadius
+	dy := math.Abs(py-this.Center[1]) / this.VertexRadius
 	return dx <= 1.0-buffer &&
 		dy <= math.Sqrt(3.0)/2.0-buffer &&
 		dx+dy/math.Sqrt(3.0) <= 1.0-buffer
@@ -104,12 +129,4 @@ type HexConnection struct {
 	Connection Connection
 }
 
-func NewHex(col, row int, originX, originY float64) *Hex {
-	x := float64(col) * HexSideRadius
-	y := float64(row) * HexVertexRadius * 3
-	// Offset odd rows to create staggered effect
-	if col%2 != 0 {
-		y += HexVertexRadius * 1.5
-	}
-	return &Hex{Col: col, Row: row, Center: Coordinate{x + originX, y + originY}}
-}
+type Loop []HexConnection
