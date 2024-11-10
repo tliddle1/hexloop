@@ -5,6 +5,8 @@ import (
 	"strconv"
 )
 
+var Green = color.RGBA{R: 0, G: 255, B: 0, A: 255}
+
 type Theme struct {
 	BackgroundColor         color.RGBA
 	HexBorderColor          color.RGBA
@@ -21,11 +23,11 @@ func NewBeeTheme() *Theme {
 		ConnectionColor:       color.RGBA{R: 133, G: 77, B: 13, A: 255},   // Brown
 		PendingHexBorderColor: color.RGBA{R: 150, G: 123, B: 182, A: 255}, // Lavender
 		PendingConnectionColors: []color.RGBA{
-			{R: 0, G: 255, B: 0, A: 255},   // Green
+			{R: 255, G: 0, B: 0, A: 255},   // Red
 			{R: 0, G: 0, B: 255, A: 255},   // Blue
 			{R: 255, G: 0, B: 255, A: 255}, // Magenta
 		},
-		CompletedLoopColor: color.RGBA{R: 255, G: 0, B: 0, A: 255},
+		CompletedLoopColor: Green,
 	}
 }
 
@@ -36,11 +38,11 @@ func NewBlueTheme() *Theme {
 		ConnectionColor:       HexToRGB("#C2B2B4"), // French Gray
 		PendingHexBorderColor: HexToRGB("#F5DDDD"), // Misty Rose
 		PendingConnectionColors: []color.RGBA{
-			{R: 0, G: 255, B: 0, A: 255},   // Green
+			{R: 255, G: 0, B: 0, A: 255},   // Red
 			{R: 255, G: 165, B: 0, A: 255}, // Orange
 			{R: 255, G: 0, B: 255, A: 255}, // Magenta
 		},
-		CompletedLoopColor: color.RGBA{R: 255, G: 0, B: 0, A: 255},
+		CompletedLoopColor: Green,
 	}
 }
 func NewDefaultTheme() *Theme {
