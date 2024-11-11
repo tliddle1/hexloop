@@ -6,6 +6,7 @@ import (
 	"image/color"
 	"log"
 	"math/rand"
+	"strconv"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/examples/resources/fonts"
@@ -14,6 +15,8 @@ import (
 	"github.com/tliddle1/hexloop/draw"
 	"github.com/tliddle1/hexloop/hexagon"
 	"github.com/tliddle1/hexloop/vector"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 )
 
 const (
@@ -77,6 +80,7 @@ type Game struct {
 	gameInProgress            bool
 	currentScene              scene
 	titleHexes                []*hexagon.TextHexagon
+	printer                   *message.Printer
 }
 
 // NewGame initializes the game state
@@ -95,6 +99,7 @@ func NewGame() *Game {
 		gameInProgress:       true,
 		currentScene:         titleScreen,
 		titleHexes:           newTitleHexes(screenWidth, screenHeight),
+		printer:              message.NewPrinter(language.English),
 	}
 }
 
@@ -389,7 +394,7 @@ func (this *Game) removeCompletedLoops() {
 }
 
 func (this *Game) drawScore(screen *ebiten.Image) {
-	text.Draw(screen, scoreString(this.score), getTextFace(scoreTextSize), getDrawScoreOptions(this.theme.ConnectionColor))
+	text.Draw(screen, this.scoreString(this.score), getTextFace(scoreTextSize), getDrawScoreOptions(this.theme.ConnectionColor))
 }
 
 func (this *Game) drawHexagonGameBoard(screen *ebiten.Image) {
@@ -515,7 +520,7 @@ func (this *Game) gameOver() bool {
 }
 
 func (this *Game) drawHighScore(screen *ebiten.Image) {
-	text.Draw(screen, highScoreString(this.highScore), getTextFace(scoreTextSize), getDrawHighScoreOptions(this.theme.ConnectionColor))
+	text.Draw(screen, this.highScoreString(this.highScore), getTextFace(scoreTextSize), getDrawHighScoreOptions(this.theme.ConnectionColor))
 }
 
 func (this *Game) startOver() {
@@ -597,14 +602,14 @@ func (this *Game) getStartButton() *hexagon.TextHexagon {
 	return nil
 }
 
-func highScoreString(score int) string {
-	// todo add commas
-	return fmt.Sprintf("High Score: %d", score)
+func (this *Game) highScoreString(score int) string {
+	scoreStr := strconv.Itoa(score)
+	return "High Score: " + this.withCommas(scoreStr)
 }
 
-func scoreString(score int) string {
-	// todo add commas
-	return fmt.Sprintf("Score: %d", score)
+func (this *Game) scoreString(score int) string {
+	scoreStr := strconv.Itoa(score)
+	return "Score: " + this.withCommas(scoreStr)
 }
 
 func getTextFace(textSize float64) text.Face {
@@ -639,4 +644,11 @@ func isEven(x int) bool {
 
 func isOdd(x int) bool {
 	return x%2 != 0
+}
+
+func (this *Game) withCommas(s string) string {
+	if len(s) <= 3 {
+		return s
+	}
+	return this.withCommas(s[:len(s)-3]) + "," + s[len(s)-3:]
 }

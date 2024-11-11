@@ -37,3 +37,29 @@ func Test_loopPoints(t *testing.T) {
 		})
 	}
 }
+
+func Test_withComma(t *testing.T) {
+	testGame := NewGame()
+	type args struct {
+		score string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{name: "no comma", args: args{score: "3"}, want: "3"},
+		{name: "4 digits", args: args{score: "3000"}, want: "3,000"},
+		{name: "5 digits", args: args{score: "30000"}, want: "30,000"},
+		{name: "6 digits", args: args{score: "300000"}, want: "300,000"},
+		{name: "7 digits", args: args{score: "3000000"}, want: "3,000,000"},
+		{name: "10 digits", args: args{score: "3000000000"}, want: "3,000,000,000"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := testGame.withCommas(tt.args.score); got != tt.want {
+				t.Errorf("withCommas() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
