@@ -41,11 +41,31 @@ func TextHexagon(screen *ebiten.Image, hex *hexagon.TextHexagon, borderColor, co
 	x, y := hex.Center[0], hex.Center[1]
 	fontSize := hex.TextSize
 	face := hex.GetTextFace(fontSize)
-	offset := text.Advance(hex.Str, face)
-	drawOptions := &text.DrawOptions{}
-	drawOptions.GeoM.Translate(x-(offset/2), y-(fontSize*2/3))
-	drawOptions.ColorScale.ScaleWithColor(connectionColor)
-	text.Draw(screen, hex.Str, face, drawOptions)
+	// todo refactor
+	if hex.Str == "How to Play" {
+		offset := text.Advance("to", face)
+		drawOptions := &text.DrawOptions{}
+		drawOptions.ColorScale.ScaleWithColor(connectionColor)
+		// to
+		drawOptions.GeoM.Translate(x-(offset/2), y-(fontSize*2/3))
+		text.Draw(screen, "to", face, drawOptions)
+		// how
+		previousXOffset := x - (offset / 2)
+		offset = text.Advance("How", face)
+		drawOptions.GeoM.Translate(x-(offset/2)-previousXOffset, -fontSize)
+		text.Draw(screen, "How", face, drawOptions)
+		// play
+		previousXOffset = x - (offset / 2)
+		offset = text.Advance("Play", face)
+		drawOptions.GeoM.Translate(x-(offset/2)-previousXOffset, fontSize*2)
+		text.Draw(screen, "Play", face, drawOptions)
+	} else {
+		offset := text.Advance(hex.Str, face)
+		drawOptions := &text.DrawOptions{}
+		drawOptions.GeoM.Translate(x-(offset/2), y-(fontSize*2/3))
+		drawOptions.ColorScale.ScaleWithColor(connectionColor)
+		text.Draw(screen, hex.Str, face, drawOptions)
+	}
 }
 
 func HexagonConnections(screen *ebiten.Image, hex *hexagon.Hex, connectionColor color.RGBA, theme *color2.Theme) {

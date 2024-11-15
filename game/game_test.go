@@ -39,7 +39,6 @@ func Test_loopPoints(t *testing.T) {
 }
 
 func Test_withComma(t *testing.T) {
-	testGame := NewGame()
 	type args struct {
 		score string
 	}
@@ -57,7 +56,7 @@ func Test_withComma(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := testGame.withCommas(tt.args.score); got != tt.want {
+			if got := withCommas(tt.args.score); got != tt.want {
 				t.Errorf("withCommas() = %v, want %v", got, tt.want)
 			}
 		})
