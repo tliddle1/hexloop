@@ -617,17 +617,22 @@ func (this *Game) getHexFromGridPosition(row, col int) *hexagon.Hex {
 	return nil
 }
 
-func (this *Game) getCompleteLoops(hex *hexagon.Hex) (loops []hexagon.Loop) {
+func (this *Game) getCompleteLoops(hex *hexagon.Hex) []hexagon.Loop {
+	var loops []hexagon.Loop
 	if !hex.Empty() {
 		for _, connection := range hex.Connections {
 			side := connection[0]
+			startingHexConnection := hexagon.HexConnection{
+				Hex:        hex,
+				Connection: connection,
+			}
+			if duplicateConnection(loops, startingHexConnection) {
+				continue
+			}
 			loop, completedLoop, _ := this.findLoop(
 				side,
 				hex,
-				hexagon.HexConnection{
-					Hex:        hex,
-					Connection: connection,
-				},
+				startingHexConnection,
 				hexagon.Loop{{
 					Hex:        hex,
 					Connection: connection,
@@ -638,6 +643,15 @@ func (this *Game) getCompleteLoops(hex *hexagon.Hex) (loops []hexagon.Loop) {
 		}
 	}
 	return loops
+}
+
+func duplicateConnection(loops []hexagon.Loop, connection hexagon.HexConnection) bool {
+	for _, loop := range loops {
+		if loop.Contains(connection) {
+			return true
+		}
+	}
+	return false
 }
 
 func (this *Game) getIncompleteLoops(hex *hexagon.Hex) (loops []hexagon.Loop, touchesWall bool) {

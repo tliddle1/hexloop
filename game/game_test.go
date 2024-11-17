@@ -24,10 +24,10 @@ func Test_loopPoints(t *testing.T) {
 		{name: "default", args: args{n: 13}, want: 91},
 		{name: "default", args: args{n: 14}, want: 105},
 		{name: "default", args: args{n: 30}, want: 465},
-		{name: "default", args: args{n: 50}, want: 1275},
-		{name: "default", args: args{n: 100}, want: 5050},
-		{name: "default", args: args{n: 5 * 9 * 3}, want: 9180},
-		{name: "default", args: args{n: 5 * 18 * 3}, want: 36585},
+		{name: "default", args: args{n: 50}, want: 1_275},
+		{name: "default", args: args{n: 100}, want: 5_050},
+		{name: "default", args: args{n: 5 * 9 * 3}, want: 9_180},
+		{name: "default", args: args{n: 5 * 18 * 3}, want: 36_585},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -37,6 +37,40 @@ func Test_loopPoints(t *testing.T) {
 		})
 	}
 }
+
+// TODO Add test for calculatePoints
+//func Test_calculatePoints(t *testing.T) {
+//	type args struct {
+//		loops []hexagon.Loop
+//	}
+//	tests := []struct {
+//		name string
+//		args args
+//		want int
+//	}{
+//		{name: "default", args: args{loops: getLoops()}, want: 6},
+//	}
+//	for _, tt := range tests {
+//		t.Run(tt.name, func(t *testing.T) {
+//			if got := calculatePoints(tt.args.loops); got != tt.want {
+//				t.Errorf("loopPoints() = %v, want %v", got, tt.want)
+//			}
+//		})
+//	}
+//}
+//
+//func getLoops() []hexagon.Loop {
+//	return []hexagon.Loop{getLoop()}
+//}
+//
+//func getLoop() hexagon.Loop {
+//	var connections []hexagon.HexConnection
+//	connA := hexagon.HexConnection{
+//		Hex:        nil,
+//		Connection: hexagon.Connection{},
+//	}
+//	return connections
+//}
 
 func Test_withComma(t *testing.T) {
 	type args struct {

@@ -134,7 +134,22 @@ type HexConnection struct {
 	Connection Connection
 }
 
+func (this HexConnection) Equals(c HexConnection) bool {
+	sameHex := this.Hex.Col == c.Hex.Col && this.Hex.Row == c.Hex.Row
+	sameConnection := this.Connection == c.Connection || (this.Connection[0] == c.Connection[1] && this.Connection[1] == c.Connection[0])
+	return sameHex && sameConnection
+}
+
 type Loop []HexConnection
+
+func (this Loop) Contains(connection HexConnection) bool {
+	for _, c := range this {
+		if connection.Equals(c) {
+			return true
+		}
+	}
+	return false
+}
 
 type TextHexagon struct {
 	*Hex
