@@ -15,8 +15,6 @@ import (
 	"github.com/tliddle1/hexloop/draw"
 	"github.com/tliddle1/hexloop/hexagon"
 	"github.com/tliddle1/hexloop/vector"
-	"golang.org/x/text/language"
-	"golang.org/x/text/message"
 )
 
 const (
@@ -37,6 +35,10 @@ const (
 	tutorialScreenExplanation
 	tutorialScreen1
 	tutorialScreen2
+	//hexGridWidth = hexagon.HexSideRadius * (cols + 1) // +3 in parentheses if you want to accommodate for the current hexagon on the sidebar
+	hexGridHeight = hexagon.HexVertexRadius * (rows*3 + 0.5)
+	screenWidth   = 494 + marginSize*2 // int(hexGridWidth) + marginSize*2
+	screenHeight  = int(hexGridHeight) + marginSize*2 + smallTextSize + smallTextSize
 )
 
 var (
@@ -59,6 +61,7 @@ var (
 	}
 )
 
+// TODO add drawings to image to improve performance
 // TODO make unit tests
 // TODO make clickableShape interface (arrow, hexagon, etc.)
 // TODO Play Game button then start button (don't start until cursor is up again)
@@ -86,7 +89,7 @@ type Game struct {
 	gameInProgress            bool
 	currentSceneType          sceneType
 	titleHexes                []*hexagon.TextHexagon
-	printer                   *message.Printer
+	titleBoardImage           *ebiten.Image
 	nextArrowHovered          bool
 	startButton               *hexagon.TextHexagon
 	tutorialButton            *hexagon.TextHexagon
@@ -94,12 +97,8 @@ type Game struct {
 
 // NewGame initializes the game state
 func NewGame() *Game {
-	hexGridWidth := hexagon.HexSideRadius * (cols + 1) // +3 in parentheses if you want to accommodate for the current hexagon on the sidebar
-	hexGridHeight := hexagon.HexVertexRadius * (rows*3 + 0.5)
-	screenWidth := int(hexGridWidth) + marginSize*2
-	screenHeight := int(hexGridHeight) + marginSize*2 + smallTextSize + smallTextSize
 	titleHexes, startButton, tutorialButton := newTitleHexes(screenWidth, screenHeight)
-	return &Game{
+	g := Game{
 		hexes:                newHexes(rows, cols, hexagon.HexVertexRadius, draw.HexagonStrokeWidth, draw.ConnectionWidth, getGameBoardFirstHexCoordinate()),
 		possibleConnections:  connectionPermutations,
 		theme:                color2.NewDefaultTheme(),
@@ -111,8 +110,9 @@ func NewGame() *Game {
 		titleHexes:           titleHexes,
 		startButton:          startButton,
 		tutorialButton:       tutorialButton,
-		printer:              message.NewPrinter(language.English),
 	}
+	g.generateTitleBoardImage(screenWidth, screenHeight)
+	return &g
 }
 
 func newTitleHexes(screenWidth, screenHeight int) (titleHexes []*hexagon.TextHexagon, startButton, tutorialButton *hexagon.TextHexagon) {
@@ -195,9 +195,9 @@ func (this *Game) Draw(screen *ebiten.Image) {
 }
 
 // Layout sets the screen size
-func (this *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
-	//return screenWidth, screenHeight
-	return outsideWidth, outsideHeight
+func (this *Game) Layout(_, _ int) (int, int) {
+	return screenWidth, screenHeight
+	//return outsideWidth, outsideHeight
 }
 
 // Update handles game logic updates
@@ -212,6 +212,9 @@ func (this *Game) Update() error {
 	case tutorialScreen2:
 		this.updateTutorial2Screen()
 	case titleScreen:
+		this.updateTitleScreen()
+	default:
+		this.currentSceneType = titleScreen
 		this.updateTitleScreen()
 	}
 	return nil
@@ -229,10 +232,24 @@ func (this *Game) drawHexagonGameBoard(screen *ebiten.Image) {
 	}
 }
 
+func (g *Game) generateTitleBoardImage(width, height int) {
+	img := ebiten.NewImage(width, height)
+
+	for _, hex := range g.titleHexes {
+		draw.TextHexagon(img, hex, g.theme.HexBorderColor, g.theme.ConnectionColor)
+	}
+	for _, hex := range g.titleHexes {
+		draw.HexagonConnections(img, hex.Hex, g.theme.ConnectionColor, g.theme)
+	}
+
+	g.titleBoardImage = img
+}
+
 func (this *Game) drawHexagonTitleBoard(screen *ebiten.Image) {
-	for _, hex := range this.titleHexes {
-		draw.TextHexagon(screen, hex, this.theme.HexBorderColor, this.theme.ConnectionColor)
-		draw.HexagonConnections(screen, hex.Hex, this.theme.ConnectionColor, this.theme)
+	if this.titleBoardImage != nil {
+		op := &ebiten.DrawImageOptions{}
+		op.GeoM.Translate(0, 0) // Or wherever you want to place it
+		screen.DrawImage(this.titleBoardImage, op)
 	}
 }
 
