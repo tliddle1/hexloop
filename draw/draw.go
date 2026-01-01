@@ -24,15 +24,39 @@ const (
 func Hexagon(screen *ebiten.Image, hex *hexagon.Hex, borderColor color.RGBA) {
 	vertices := hex.VertexCoordinates()
 	vertices = append(vertices, vertices[0])
+
+	// Extension per end for a regular hexagon
+	extend := float64(hex.EdgeWidth) / (2 * math.Sqrt(3))
+
 	for i := 0; i < hexagon.NumHexagonSides; i++ {
-		vector.StrokeLine(screen,
-			float32(vertices[i][0]),
-			float32(vertices[i][1]),
-			float32(vertices[i+1][0]),
-			float32(vertices[i+1][1]),
+		x1, y1 := vertices[i][0], vertices[i][1]
+		x2, y2 := vertices[i+1][0], vertices[i+1][1]
+
+		// Direction vector
+		dx := x2 - x1
+		dy := y2 - y1
+
+		// Normalize
+		len := math.Hypot(dx, dy)
+		ux := dx / len
+		uy := dy / len
+
+		// Extend both ends
+		x1 -= ux * extend
+		y1 -= uy * extend
+		x2 += ux * extend
+		y2 += uy * extend
+
+		vector.StrokeLine(
+			screen,
+			float32(x1),
+			float32(y1),
+			float32(x2),
+			float32(y2),
 			hex.EdgeWidth,
 			borderColor,
-			true)
+			true,
+		)
 	}
 }
 
