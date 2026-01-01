@@ -12,11 +12,11 @@ import (
 )
 
 const (
-	HexagonStrokeWidth      = 2
-	ConnectionWidth         = 3
-	TitleHexagonStrokeWidth = 4
-	TitleConnectionWidth    = 6
-	pathBuffer              = 4
+	HexagonStrokeWidth      = 2 * hexagon.Scale
+	ConnectionWidth         = 3 * hexagon.Scale
+	TitleHexagonStrokeWidth = 4 * hexagon.Scale
+	TitleConnectionWidth    = 6 * hexagon.Scale
+	pathBuffer              = 4 * hexagon.Scale
 )
 
 // TODO meet corners of hexagon visually

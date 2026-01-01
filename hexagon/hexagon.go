@@ -10,10 +10,11 @@ import (
 )
 
 const (
+	Scale               = 2
 	sqrt3               = 1.7320508075688772
-	HexVertexRadiusTest = 60
+	HexVertexRadiusTest = 60 * Scale
 	HexSideRadiusTest   = HexVertexRadiusTest * sqrt3 / 2
-	HexVertexRadius     = 30 // Distance from center of hexagon to vertex
+	HexVertexRadius     = 30 * Scale // Distance from center of hexagon to vertex
 	HexSideRadius       = HexVertexRadius * sqrt3 / 2
 	NumHexagonSides     = 6
 )

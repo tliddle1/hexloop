@@ -19,10 +19,11 @@ import (
 
 const (
 	// board
+	scale         = hexagon.Scale
 	rows          = 5          // Number of hexagon rows
 	cols          = rows*4 - 2 // Number of hexagon columns
-	marginSize    = 30
-	smallTextSize = 24
+	marginSize    = 30 * scale
+	smallTextSize = 24 * scale
 	// points
 	clearBoardBonus  = 5_000
 	lowestPointValue = 1.0
@@ -37,8 +38,8 @@ const (
 	tutorialScreen2
 	//hexGridWidth = hexagon.HexSideRadius * (cols + 1) // +3 in parentheses if you want to accommodate for the current hexagon on the sidebar
 	hexGridHeight = hexagon.HexVertexRadius * (rows*3 + 0.5)
-	screenWidth   = 494 + marginSize*2 // int(hexGridWidth) + marginSize*2
-	screenHeight  = int(hexGridHeight) + marginSize*2 + smallTextSize + smallTextSize
+	screenWidth   = hexGridHeight + smallTextSize + marginSize*2 // int(hexGridWidth) + marginSize*2
+	screenHeight  = int(hexGridHeight) + marginSize*2 + smallTextSize*2
 )
 
 var (
